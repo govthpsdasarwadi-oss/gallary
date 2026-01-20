@@ -169,6 +169,35 @@ document.getElementById("title").onclick = () => {
 };
 
 function closeAdmin() { document.getElementById("admin").style.display = "none"; }
+
+// --- Admin Access (5 Clicks + Password) ---
+let clickCount = 0, timer;
+const ADMIN_PASSWORD = "1234"; // <--- CHANGE YOUR PASSWORD HERE
+
+document.getElementById("title").onclick = () => {
+    clickCount++;
+    clearTimeout(timer);
+    
+    if (clickCount === 5) {
+        clickCount = 0; // Reset count
+        
+        // Ask for password
+        let pw = prompt("Enter Admin Password:");
+        
+        if (pw === ADMIN_PASSWORD) {
+            document.getElementById("admin").style.display = "block";
+        } else if (pw !== null) {
+            alert("Wrong password!");
+        }
+    }
+    
+    // Reset if clicks are too slow (more than 1.5 seconds apart)
+    timer = setTimeout(() => clickCount = 0, 1500);
+};
+
+function closeAdmin() { 
+    document.getElementById("admin").style.display = "none"; 
+}
 </script>
 </body>
 </html>
