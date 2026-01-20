@@ -2,8 +2,12 @@
 <html lang="kn">
 <head>
 <meta charset="UTF-8">
-<title>Dasarwadi School Gallery - Download Enabled</title>
+<title>Dasarwadi School Gallery - Cloud Powered</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
 <style>
     body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #000; color: white; overflow: hidden; }
@@ -13,26 +17,25 @@
     .slides img { width: 100vw; height: 100%; object-fit: contain; background: #000; flex-shrink: 0; }
 
     #admin { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f6; color: #333; z-index: 1000; padding: 15px; box-sizing: border-box; overflow-y: auto; }
-    .admin-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .admin-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 500px; margin: auto; }
     
-    .upload-box { background: #eef2f3; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 2px dashed #0a3d62; }
+    .upload-box { background: #eef2f3; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 2px dashed #0a3d62; text-align: center; }
     button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
     .save-btn { background: #0a3d62; color: white; }
     .close-btn { background: #95a5a6; color: white; }
-    .dl-all-btn { background: #27ae60; color: white; }
     
     #thumbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
     .thumb-wrapper { position: relative; border-radius: 8px; overflow: hidden; background: #ddd; border: 1px solid #ccc; }
     img.thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+    .del-btn { background: #e74c3c; color: white; padding: 5px; font-size: 12px; }
     
-    .btn-group { display: flex; gap: 2px; position: absolute; bottom: 0; width: 100%; }
-    .btn-group button { margin: 0; border-radius: 0; font-size: 11px; padding: 8px 2px; flex: 1; }
-    .del-btn { background: #e74c3c; color: white; }
-    .dl-btn { background: #2980b9; color: white; }
+    #loading-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; color: white; }
 </style>
 </head>
 
 <body>
+
+<div id="loading-overlay">Uploading to Cloud...</div>
 
 <header id="title">ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery</header>
 
@@ -40,39 +43,61 @@
 
 <div id="admin">
     <div class="admin-card">
-        <h3>Admin Settings</h3>
+        <h3>Admin Settings (Cloud)</h3>
         <div class="upload-box">
             <input type="file" id="file" accept="image/*">
-            <button class="save-btn" onclick="upload()">Save to Gallery</button>
+            <button class="save-btn" onclick="uploadToFirebase()">Upload to Cloud</button>
         </div>
         
         <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:10px;">
-            <span>Manage Photos</span>
+            <span>Cloud Photos</span>
             <span id="imgCount">0 Photos</span>
         </div>
 
         <div id="thumbs"></div>
-
-        <button class="dl-all-btn" onclick="downloadBackup()">📥 Backup All Photos (.txt)</button>
         <button class="close-btn" onclick="closeAdmin()">Close Panel</button>
     </div>
 </div>
 
 <script>
-let images = JSON.parse(localStorage.getItem("ghs_imgs") || "[]");
-const slides = document.getElementById("slides");
-const thumbs = document.getElementById("thumbs");
+// --- 1. REPLACE THIS BLOCK WITH YOUR FIREBASE CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyD_z7J_MrG5yEv_zJYmt_sHpXeeF76doBE",
+  authDomain: "gallary-400ef.firebaseapp.com",
+  projectId: "gallary-400ef",
+  storageBucket: "gallary-400ef.firebasestorage.app",
+  messagingSenderId: "136788870871",
+  appId: "1:136788870871:web:7c7686952357bd2eabd292"
+};
 
-function load() {
-    slides.innerHTML = images.length === 0 ? "<div style='width:100vw; height:100%; display:flex; align-items:center; justify-content:center;'>Empty</div>" : images.map(src => `<img src="${src}">`).join('');
+
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+let images = []; // Format: { id: "doc_id", url: "http..." }
+
+// --- Sync with Firebase Realtime ---
+db.collection("school_gallery").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    images = snapshot.docs.map(doc => ({ id: doc.id, url: doc.data().url }));
+    renderUI();
+});
+
+function renderUI() {
+    const slidesDiv = document.getElementById("slides");
+    const thumbsDiv = document.getElementById("thumbs");
+
+    // Render Slider
+    slidesDiv.innerHTML = images.length === 0 ? 
+        "<div style='width:100vw; height:100%; display:flex; align-items:center; justify-content:center;'>No photos in cloud</div>" : 
+        images.map(img => `<img src="${img.url}">`).join('');
     
-    thumbs.innerHTML = images.map((src, idx) => `
+    // Render Admin Thumbs
+    thumbsDiv.innerHTML = images.map((img) => `
         <div class="thumb-wrapper">
-            <img class="thumb" src="${src}">
-            <div class="btn-group">
-                <button class="dl-btn" onclick="downloadSingle(${idx})">SAVE</button>
-                <button class="del-btn" onclick="deleteImg(${idx})">DEL</button>
-            </div>
+            <img class="thumb" src="${img.url}">
+            <button class="del-btn" onclick="deleteFromFirebase('${img.id}', '${img.url}')">DELETE</button>
         </div>
     `).join('');
 
@@ -80,61 +105,61 @@ function load() {
     startAutoSlide();
 }
 
-function upload() {
-    let f = document.getElementById("file").files[0];
-    if (!f) return;
-    let reader = new FileReader();
-    reader.onload = (e) => {
-        let img = new Image();
-        img.onload = () => {
-            let canvas = document.createElement("canvas");
-            let max_w = 900;
-            canvas.width = max_w;
-            canvas.height = img.height * (max_w / img.width);
-            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-            images.push(canvas.toDataURL("image/jpeg", 0.7));
-            save();
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(f);
+async function uploadToFirebase() {
+    const fileInput = document.getElementById("file");
+    const file = fileInput.files[0];
+    if (!file) return alert("Select a file first");
+
+    document.getElementById("loading-overlay").style.display = "flex";
+
+    try {
+        // 1. Upload file to Firebase Storage
+        const fileName = Date.now() + "_" + file.name;
+        const storageRef = storage.ref('gallery/' + fileName);
+        const snapshot = await storageRef.put(file);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+
+        // 2. Save URL to Firestore
+        await db.collection("school_gallery").add({
+            url: downloadURL,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        fileInput.value = "";
+        alert("Uploaded successfully!");
+    } catch (e) {
+        console.error(e);
+        alert("Error uploading: " + e.message);
+    } finally {
+        document.getElementById("loading-overlay").style.display = "none";
+    }
 }
 
-function downloadSingle(idx) {
-    const link = document.createElement("a");
-    link.href = images[idx];
-    link.download = `school_photo_${idx + 1}.jpg`;
-    link.click();
+async function deleteFromFirebase(id, url) {
+    if (!confirm("Delete this photo forever?")) return;
+    
+    try {
+        await db.collection("school_gallery").doc(id).delete();
+        // Optional: Also delete from Storage to save space
+        const storageRef = storage.refFromURL(url);
+        await storageRef.delete();
+    } catch (e) {
+        alert("Delete error: " + e.message);
+    }
 }
 
-function downloadBackup() {
-    if(images.length === 0) return alert("No photos to backup");
-    const blob = new Blob([JSON.stringify(images)], {type: "text/plain"});
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "ghs_gallery_backup.txt";
-    link.click();
-}
-
-function deleteImg(idx) {
-    if(confirm("Delete photo?")) { images.splice(idx, 1); save(); }
-}
-
-function save() {
-    localStorage.setItem("ghs_imgs", JSON.stringify(images));
-    load();
-}
-
+// --- Slider Logic ---
 let i = 0, intv;
 function startAutoSlide() {
     clearInterval(intv);
     if (images.length < 2) return;
     intv = setInterval(() => {
         i = (i + 1) % images.length;
-        slides.style.transform = `translateX(-${i * 100}vw)`;
+        document.getElementById("slides").style.transform = `translateX(-${i * 100}vw)`;
     }, 4000);
 }
 
+// --- Admin Access (5 Clicks) ---
 let clickCount = 0, timer;
 document.getElementById("title").onclick = () => {
     clickCount++;
@@ -144,8 +169,6 @@ document.getElementById("title").onclick = () => {
 };
 
 function closeAdmin() { document.getElementById("admin").style.display = "none"; }
-
-load();
 </script>
 </body>
 </html>
