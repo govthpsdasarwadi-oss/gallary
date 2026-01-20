@@ -6,24 +6,157 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <style>
-body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #000; color: white; overflow: hidden; }
-header { background: #0a3d62; padding: 15px; text-align: center; font-weight: bold; font-size: 18px; cursor: pointer; border-bottom: 2px solid #3498db; position: relative; }
-.full-btn { position: absolute; right: 10px; top: 10px; background: #27ae60; border: none; color: white; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-.slider { width: 100vw; height: calc(100vh - 54px); position: relative; overflow: hidden; }
-.slides { display: flex; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-.slides img { width: 100vw; height: 100%; object-fit: contain; background: #000; flex-shrink: 0; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #000;
+  color: white;
+  overflow: hidden;
+}
 
-#admin { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f6; color: #333; z-index: 1000; padding: 15px; box-sizing: border-box; overflow-y: auto; }
-.admin-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-.upload-box { background: #eef2f3; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 2px dashed #0a3d62; }
-button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
+/* 🌈 Rainbow flowing header */
+header {
+  padding: 15px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  border-bottom: 2px solid #3498db;
+  background: linear-gradient(270deg,
+    #ff0000, #ff7300, #ffeb00, #47ff00,
+    #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+  background-size: 1600% 1600%;
+  animation: rainbowFlow 10s ease infinite;
+  color: white;
+}
+
+@keyframes rainbowFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.slider {
+  width: 100vw;
+  height: calc(100vh - 60px);
+  position: relative;
+  overflow: hidden;
+}
+
+.slides {
+  display: flex;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slides img {
+  width: 100vw;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  flex-shrink: 0;
+}
+
+/* ⛶ Fullscreen button bottom */
+.full-btn {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 999;
+  background: #27ae60;
+  border: none;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* 🔐 Admin Panel */
+#admin {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #f4f7f6;
+  color: #333;
+  z-index: 1000;
+  padding: 15px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.admin-card {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.upload-box {
+  background: #eef2f3;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 2px dashed #0a3d62;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .save-btn { background: #0a3d62; color: white; }
 .close-btn { background: #95a5a6; color: white; }
-#thumbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
-.thumb-wrapper { position: relative; border-radius: 8px; overflow: hidden; background: #ddd; border: 1px solid #ccc; }
-img.thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
-.btn-group { display: flex; gap: 2px; position: absolute; bottom: 0; width: 100%; }
-.btn-group button { margin: 0; border-radius: 0; font-size: 11px; padding: 8px 2px; flex: 1; }
+
+#thumbs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.thumb-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ddd;
+  border: 1px solid #ccc;
+}
+
+img.thumb {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+}
+
+.btn-group {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.btn-group button {
+  margin: 0;
+  border-radius: 0;
+  font-size: 11px;
+  padding: 8px 2px;
+  flex: 1;
+}
+
 .del-btn { background: #e74c3c; color: white; }
 .dl-btn { background: #2980b9; color: white; }
 </style>
@@ -33,10 +166,13 @@ img.thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 
 <header id="title">
   ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery
-  <button class="full-btn" onclick="toggleFullscreen()">⛶</button>
 </header>
 
-<div class="slider"><div class="slides" id="slides"></div></div>
+<div class="slider">
+  <div class="slides" id="slides"></div>
+</div>
+
+<button class="full-btn" onclick="toggleFullscreen()">⛶ Full Screen</button>
 
 <div id="admin">
   <div class="admin-card">
@@ -61,7 +197,7 @@ img.thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// 🔥 REPLACE THIS WITH YOUR OWN FIREBASE CONFIG
+// 🔥 Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBb4fvEag4UaBiiIClR2KJLo6XFyyQlAHU",
   authDomain: "my-school-7ed03.firebaseapp.com",
@@ -156,19 +292,27 @@ document.getElementById("title").onclick = () => {
   clearTimeout(timer);
   if (clickCount === 5) {
     const pwd = prompt("Enter admin password:");
-    if (pwd === "1234") { document.getElementById("admin").style.display = "block"; }
-    else alert("Wrong password!");
+    if (pwd === "1234") {
+      document.getElementById("admin").style.display = "block";
+    } else {
+      alert("Wrong password!");
+    }
     clickCount = 0;
   }
   timer = setTimeout(() => clickCount = 0, 1500);
 };
 
-function closeAdmin() { document.getElementById("admin").style.display = "none"; }
+function closeAdmin() {
+  document.getElementById("admin").style.display = "none";
+}
 
-// ⛶ Fullscreen
+// ⛶ Fullscreen toggle
 function toggleFullscreen() {
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-  else document.exitFullscreen();
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
 }
 </script>
 </body>
