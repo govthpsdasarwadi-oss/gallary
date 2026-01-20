@@ -14,20 +14,31 @@ body {
   overflow: hidden;
 }
 
-/* 🌈 Rainbow flowing header */
+/* Header */
 header {
-  padding: 15px;
+  padding: 20px 10px;
   text-align: center;
   font-weight: bold;
-  font-size: 18px;
+  font-size: 30px;
   cursor: pointer;
   border-bottom: 2px solid #3498db;
+  background: #0a3d62;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rainbow-text {
+  display: inline-block;
+  max-width: 100%;
+  font-size: 30px;
   background: linear-gradient(270deg,
     #ff0000, #ff7300, #ffeb00, #47ff00,
     #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 1600% 1600%;
   animation: rainbowFlow 10s ease infinite;
-  color: white;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 @keyframes rainbowFlow {
@@ -36,9 +47,10 @@ header {
   100% { background-position: 0% 50%; }
 }
 
+/* Slider */
 .slider {
   width: 100vw;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 80px);
   position: relative;
   overflow: hidden;
 }
@@ -57,7 +69,7 @@ header {
   flex-shrink: 0;
 }
 
-/* ⛶ Fullscreen button bottom */
+/* Fullscreen button */
 .full-btn {
   position: fixed;
   right: 12px;
@@ -74,7 +86,7 @@ header {
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
-/* 🔐 Admin Panel */
+/* Admin Panel */
 #admin {
   display: none;
   position: fixed;
@@ -134,6 +146,10 @@ button {
   border: 1px solid #ccc;
 }
 
+.thumb-wrapper.dragging {
+  opacity: 0.5;
+}
+
 img.thumb {
   width: 100%;
   aspect-ratio: 4/3;
@@ -165,14 +181,14 @@ img.thumb {
 <body>
 
 <header id="title">
-  ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery
+  <span class="rainbow-text">ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery</span>
 </header>
 
 <div class="slider">
   <div class="slides" id="slides"></div>
 </div>
 
-<button class="full-btn" onclick="toggleFullscreen()">⛶ Full Screen</button>
+<button class="full-btn" id="fullBtn" onclick="toggleFullscreen()">⛶ Full Screen</button>
 
 <div id="admin">
   <div class="admin-card">
@@ -183,7 +199,7 @@ img.thumb {
     </div>
 
     <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:10px;">
-      <span>Manage Photos</span>
+      <span>Manage Photos (Drag to Rearrange)</span>
       <span id="imgCount">0 Photos</span>
     </div>
 
@@ -197,7 +213,7 @@ img.thumb {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// 🔥 Your Firebase config
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBb4fvEag4UaBiiIClR2KJLo6XFyyQlAHU",
   authDomain: "my-school-7ed03.firebaseapp.com",
@@ -214,8 +230,10 @@ const imgRef = db.ref("gallery");
 
 const slides = document.getElementById("slides");
 const thumbs = document.getElementById("thumbs");
+const fullBtn = document.getElementById("fullBtn");
 let images = [];
 
+// Auto-sync
 imgRef.on("value", snap => {
   images = snap.val() || [];
   load();
@@ -227,7 +245,7 @@ function load() {
     : images.map(src => `<img src="${src}">`).join('');
 
   thumbs.innerHTML = images.map((src, idx) => `
-    <div class="thumb-wrapper">
+    <div class="thumb-wrapper" draggable="true" data-index="${idx}">
       <img class="thumb" src="${src}">
       <div class="btn-group">
         <button class="dl-btn" onclick="downloadSingle(${idx})">SAVE</button>
@@ -237,9 +255,11 @@ function load() {
   `).join('');
 
   document.getElementById("imgCount").innerText = `${images.length} Photos`;
+  enableDrag();
   startAutoSlide();
 }
 
+// High-quality upload
 function upload() {
   let f = document.getElementById("file").files[0];
   if (!f) return alert("Select image first");
@@ -248,11 +268,12 @@ function upload() {
     let img = new Image();
     img.onload = () => {
       let canvas = document.createElement("canvas");
-      let max_w = 900;
-      canvas.width = max_w;
-      canvas.height = img.height * (max_w / img.width);
+      let max_w = 1600; // higher resolution
+      let scale = Math.min(1, max_w / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      images.push(canvas.toDataURL("image/jpeg", 0.7));
+      images.push(canvas.toDataURL("image/jpeg", 0.95)); // high quality
       imgRef.set(images);
       document.getElementById("file").value = "";
     };
@@ -275,6 +296,7 @@ function downloadSingle(idx) {
   link.click();
 }
 
+/* Auto slideshow */
 let i = 0, intv;
 function startAutoSlide() {
   clearInterval(intv);
@@ -285,7 +307,7 @@ function startAutoSlide() {
   }, 4000);
 }
 
-// 🔐 Admin lock (5 taps + password)
+/* Admin lock */
 let clickCount = 0, timer;
 document.getElementById("title").onclick = () => {
   clickCount++;
@@ -306,13 +328,43 @@ function closeAdmin() {
   document.getElementById("admin").style.display = "none";
 }
 
-// ⛶ Fullscreen toggle
+/* Fullscreen toggle */
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen();
+    fullBtn.style.display = "none";
   } else {
     document.exitFullscreen();
+    fullBtn.style.display = "block";
   }
+}
+
+/* Drag & Drop */
+let dragSrcIndex = null;
+function enableDrag() {
+  const items = document.querySelectorAll(".thumb-wrapper");
+  items.forEach(item => {
+    item.addEventListener("dragstart", e => {
+      dragSrcIndex = Number(item.dataset.index);
+      item.classList.add("dragging");
+    });
+
+    item.addEventListener("dragend", e => {
+      item.classList.remove("dragging");
+    });
+
+    item.addEventListener("dragover", e => e.preventDefault());
+
+    item.addEventListener("drop", e => {
+      e.preventDefault();
+      const targetIndex = Number(item.dataset.index);
+      if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+      const moved = images.splice(dragSrcIndex, 1)[0];
+      images.splice(targetIndex, 0, moved);
+      imgRef.set(images);
+      dragSrcIndex = null;
+    });
+  });
 }
 </script>
 </body>
