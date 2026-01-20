@@ -2,205 +2,77 @@
 <html lang="kn">
 <head>
 <meta charset="UTF-8">
-<title>Dasarwadi School Gallery - Direct Upload</title>
+<title>Dasarwadi School Gallery - Download Enabled</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-
 <style>
-    body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #000; color: white; overflow: hidden; }
-    
-    /* Responsive Header */
-    header { 
-        background: #0a3d62; 
-        padding: 15px; 
-        text-align: center; 
-        font-weight: bold; 
-        font-size: clamp(14px, 4vw, 20px); 
-        cursor: pointer; 
-        border-bottom: 2px solid #3498db;
-        position: relative;
-        z-index: 10;
-    }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #000; color: white; overflow: hidden; }
+    header { background: #0a3d62; padding: 15px; text-align: center; font-weight: bold; font-size: 18px; cursor: pointer; border-bottom: 2px solid #3498db; }
+    .slider { width: 100vw; height: calc(100vh - 54px); position: relative; overflow: hidden; }
+    .slides { display: flex; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .slides img { width: 100vw; height: 100%; object-fit: contain; background: #000; flex-shrink: 0; }
 
-    /* Universal Slider - Fixed black bars issue */
-    .slider { width: 100vw; height: calc(100vh - 60px); position: relative; overflow: hidden; background: #000; }
-    .slides { display: flex; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-    .slides img { 
-        width: 100vw; 
-        height: 100%; 
-        object-fit: contain; /* Shows full image on any screen */
-        flex-shrink: 0; 
-    }
-
-    /* Admin Panel */
-    #admin { 
-        display: none; 
-        position: fixed; 
-        top: 0; left: 0; 
-        width: 100%; height: 100%; 
-        background: rgba(244, 247, 246, 0.98); 
-        color: #333; 
-        z-index: 1000; 
-        padding: 15px; 
-        box-sizing: border-box; 
-        overflow-y: auto; 
-    }
+    #admin { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f6; color: #333; z-index: 1000; padding: 15px; box-sizing: border-box; overflow-y: auto; }
+    .admin-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
     
-    .admin-card { 
-        background: white; 
-        padding: 20px; 
-        border-radius: 15px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-        max-width: 550px; 
-        margin: 10px auto; 
-    }
-    
-    .upload-box { 
-        background: #f0f4f8; 
-        padding: 20px; 
-        border-radius: 12px; 
-        margin-bottom: 20px; 
-        border: 2px dashed #0a3d62; 
-        text-align: center; 
-    }
-
-    button { 
-        width: 100%; 
-        padding: 15px; 
-        margin: 5px 0; 
-        border-radius: 10px; 
-        border: none; 
-        font-size: 16px; 
-        font-weight: bold; 
-        cursor: pointer; 
-    }
-    
+    .upload-box { background: #eef2f3; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 2px dashed #0a3d62; }
+    button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
     .save-btn { background: #0a3d62; color: white; }
-    .close-btn { background: #bdc3c7; color: #333; }
+    .close-btn { background: #95a5a6; color: white; }
+    .dl-all-btn { background: #27ae60; color: white; }
     
-    /* Responsive Management Grid */
-    #thumbs { 
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-        gap: 10px; 
-        margin-top: 15px; 
-    }
+    #thumbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+    .thumb-wrapper { position: relative; border-radius: 8px; overflow: hidden; background: #ddd; border: 1px solid #ccc; }
+    img.thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
     
-    .thumb-wrapper { 
-        position: relative; 
-        border-radius: 8px; 
-        overflow: hidden; 
-        border: 1px solid #ddd;
-    }
-    
-    img.thumb { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-    .del-btn { background: #e74c3c; color: white; padding: 6px; font-size: 10px; width: 100%; border-radius: 0; }
-    
-    /* Direct Upload Loading Overlay */
-    #loading-overlay { 
-        display: none; 
-        position: fixed; 
-        top:0; left:0; 
-        width:100%; height:100%; 
-        background: rgba(0,0,0,0.9); 
-        z-index: 2000; 
-        flex-direction: column; 
-        justify-content: center; 
-        align-items: center; 
-        color: white; 
-    }
-    
-    .progress-bar-container {
-        width: 80%;
-        height: 10px;
-        background: #333;
-        border-radius: 5px;
-        margin-top: 15px;
-        overflow: hidden;
-    }
-    
-    #progress-fill {
-        width: 0%;
-        height: 100%;
-        background: #3498db;
-        transition: width 0.3s;
-    }
+    .btn-group { display: flex; gap: 2px; position: absolute; bottom: 0; width: 100%; }
+    .btn-group button { margin: 0; border-radius: 0; font-size: 11px; padding: 8px 2px; flex: 1; }
+    .del-btn { background: #e74c3c; color: white; }
+    .dl-btn { background: #2980b9; color: white; }
 </style>
 </head>
 
 <body>
 
-<div id="loading-overlay">
-    <div style="font-size: 18px;">Sending Original Photo...</div>
-    <div class="progress-bar-container">
-        <div id="progress-fill"></div>
-    </div>
-    <div id="progressText" style="margin-top: 10px; font-weight: bold;">0%</div>
-</div>
-
 <header id="title">ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery</header>
 
-<div class="slider">
-    <div class="slides" id="slides"></div>
-</div>
+<div class="slider"><div class="slides" id="slides"></div></div>
 
 <div id="admin">
     <div class="admin-card">
-        <h3 style="margin:0 0 15px 0;">Admin Panel</h3>
+        <h3>Admin Settings</h3>
         <div class="upload-box">
-            <input type="file" id="file" accept="image/*" style="width: 100%; margin-bottom: 10px;">
-            <button class="save-btn" onclick="uploadToFirebase()">🚀 Direct Upload</button>
+            <input type="file" id="file" accept="image/*">
+            <button class="save-btn" onclick="upload()">Save to Gallery</button>
         </div>
         
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-weight:bold;">Manage Photos</span>
-            <span id="imgCount" style="font-size:12px; opacity:0.7;">0 Photos</span>
+        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:10px;">
+            <span>Manage Photos</span>
+            <span id="imgCount">0 Photos</span>
         </div>
 
         <div id="thumbs"></div>
-        <button class="close-btn" onclick="closeAdmin()" style="margin-top:20px;">Exit Admin</button>
+
+        <button class="dl-all-btn" onclick="downloadBackup()">📥 Backup All Photos (.txt)</button>
+        <button class="close-btn" onclick="closeAdmin()">Close Panel</button>
     </div>
 </div>
 
 <script>
-// Your App Config
-const firebaseConfig = {
-  apiKey: "AIzaSyD_z7J_MrG5yEv_zJYmt_sHpXeeF76doBE",
-  authDomain: "gallary-400ef.firebaseapp.com",
-  projectId: "gallary-400ef",
-  storageBucket: "gallary-400ef.firebasestorage.app",
-  messagingSenderId: "136788870871",
-  appId: "1:136788870871:web:7c7686952357bd2eabd292"
-};
+let images = JSON.parse(localStorage.getItem("ghs_imgs") || "[]");
+const slides = document.getElementById("slides");
+const thumbs = document.getElementById("thumbs");
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-let images = [];
-const ADMIN_PASSWORD = "1234"; 
-
-// Auto-Sync Gallery
-db.collection("school_gallery").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-    images = snapshot.docs.map(doc => ({ id: doc.id, url: doc.data().url }));
-    renderUI();
-});
-
-function renderUI() {
-    const slidesDiv = document.getElementById("slides");
-    const thumbsDiv = document.getElementById("thumbs");
-
-    slidesDiv.innerHTML = images.length === 0 ? 
-        "<div style='width:100vw; height:100%; display:flex; align-items:center; justify-content:center;'>Empty Gallery</div>" : 
-        images.map(img => `<img src="${img.url}">`).join('');
+function load() {
+    slides.innerHTML = images.length === 0 ? "<div style='width:100vw; height:100%; display:flex; align-items:center; justify-content:center;'>Empty</div>" : images.map(src => `<img src="${src}">`).join('');
     
-    thumbsDiv.innerHTML = images.map((img) => `
+    thumbs.innerHTML = images.map((src, idx) => `
         <div class="thumb-wrapper">
-            <img class="thumb" src="${img.url}">
-            <button class="del-btn" onclick="deleteFromFirebase('${img.id}', '${img.url}')">DELETE</button>
+            <img class="thumb" src="${src}">
+            <div class="btn-group">
+                <button class="dl-btn" onclick="downloadSingle(${idx})">SAVE</button>
+                <button class="del-btn" onclick="deleteImg(${idx})">DEL</button>
+            </div>
         </div>
     `).join('');
 
@@ -208,50 +80,49 @@ function renderUI() {
     startAutoSlide();
 }
 
-function uploadToFirebase() {
-    const fileInput = document.getElementById("file");
-    const file = fileInput.files[0];
-    if (!file) return alert("Select photo!");
-
-    const loading = document.getElementById("loading-overlay");
-    const progressFill = document.getElementById("progress-fill");
-    const progressText = document.getElementById("progressText");
-    
-    loading.style.display = "flex";
-
-    const fileName = Date.now() + "_" + file.name;
-    const storageRef = storage.ref('gallery/' + fileName);
-    const uploadTask = storageRef.put(file);
-
-    uploadTask.on('state_changed', 
-        (snapshot) => {
-            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            progressFill.style.width = progress + "%";
-            progressText.innerText = progress + "%";
-        }, 
-        (error) => {
-            alert("Error: " + error.message);
-            loading.style.display = "none";
-        }, 
-        async () => {
-            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-            await db.collection("school_gallery").add({
-                url: downloadURL,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            fileInput.value = "";
-            loading.style.display = "none";
-            alert("Successfully uploaded!");
-        }
-    );
+function upload() {
+    let f = document.getElementById("file").files[0];
+    if (!f) return;
+    let reader = new FileReader();
+    reader.onload = (e) => {
+        let img = new Image();
+        img.onload = () => {
+            let canvas = document.createElement("canvas");
+            let max_w = 900;
+            canvas.width = max_w;
+            canvas.height = img.height * (max_w / img.width);
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            images.push(canvas.toDataURL("image/jpeg", 0.7));
+            save();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(f);
 }
 
-async function deleteFromFirebase(id, url) {
-    if (!confirm("Delete permanently?")) return;
-    try {
-        await db.collection("school_gallery").doc(id).delete();
-        await storage.refFromURL(url).delete();
-    } catch (e) { alert("Error: " + e.message); }
+function downloadSingle(idx) {
+    const link = document.createElement("a");
+    link.href = images[idx];
+    link.download = `school_photo_${idx + 1}.jpg`;
+    link.click();
+}
+
+function downloadBackup() {
+    if(images.length === 0) return alert("No photos to backup");
+    const blob = new Blob([JSON.stringify(images)], {type: "text/plain"});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "ghs_gallery_backup.txt";
+    link.click();
+}
+
+function deleteImg(idx) {
+    if(confirm("Delete photo?")) { images.splice(idx, 1); save(); }
+}
+
+function save() {
+    localStorage.setItem("ghs_imgs", JSON.stringify(images));
+    load();
 }
 
 let i = 0, intv;
@@ -260,26 +131,21 @@ function startAutoSlide() {
     if (images.length < 2) return;
     intv = setInterval(() => {
         i = (i + 1) % images.length;
-        document.getElementById("slides").style.transform = `translateX(-${i * 100}vw)`;
-    }, 5000);
+        slides.style.transform = `translateX(-${i * 100}vw)`;
+    }, 4000);
 }
 
-// 5 Taps for Admin + Password
 let clickCount = 0, timer;
 document.getElementById("title").onclick = () => {
     clickCount++;
     clearTimeout(timer);
-    if (clickCount === 5) {
-        clickCount = 0;
-        let pw = prompt("Admin Password:");
-        if (pw === ADMIN_PASSWORD) {
-            document.getElementById("admin").style.display = "block";
-        }
-    }
+    if (clickCount === 5) { document.getElementById("admin").style.display = "block"; clickCount = 0; }
     timer = setTimeout(() => clickCount = 0, 1500);
 };
 
 function closeAdmin() { document.getElementById("admin").style.display = "none"; }
+
+load();
 </script>
 </body>
 </html>
