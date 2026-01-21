@@ -2,79 +2,299 @@
 <html lang="kn">
 <head>
 <meta charset="UTF-8">
-<title>Dasarwadi School Gallery</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dasarwadi School Gallery (Auto Sync)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <style>
-body{margin:0;font-family:Segoe UI;background:#000;color:#fff;overflow:hidden}
-img{pointer-events:none}
-header{padding:20px;text-align:center;font-size:34px;font-weight:bold;
-background:#0a3d62;border-bottom:2px solid #3498db;cursor:pointer}
-.rainbow-text{
-background:linear-gradient(270deg,#ff0000,#ff7300,#ffeb00,#47ff00,#00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
-background-size:1600% 1600%;
-animation:rainbow 10s linear infinite;
--webkit-background-clip:text;
--webkit-text-fill-color:transparent}
-@keyframes rainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #000;
+  color: white;
+  overflow: hidden;
+  user-select: none;
+}
 
-.slider{width:100vw;height:calc(100vh - 90px);overflow:hidden}
-.slides{display:flex;height:100%;transition:.8s}
-.slides img{width:100vw;height:100%;object-fit:contain}
+/* Disable image drag */
+img { pointer-events: none; }
 
-.full-btn{position:fixed;right:10px;bottom:10px;background:#27ae60;color:#fff;
-border:none;padding:10px 15px;border-radius:8px;font-weight:bold;cursor:pointer}
+/* Header */
+header {
+  padding: 20px 10px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 46px;
+  cursor: pointer;
+  background: #0a3d62;
+  overflow: hidden;
+  white-space: nowrap;
+}
 
-#admin{display:none;position:fixed;inset:0;background:#f4f7f6;color:#333;
-z-index:999;padding:15px;overflow:auto}
-.admin-card{background:#fff;padding:20px;border-radius:20px}
+.rainbow-text {
+  display: inline-block;
+  width: 100%;
+  font-size: 46px;
+  background: linear-gradient(270deg,
+    #ff0000, #ff7300, #ffeb00, #47ff00,
+    #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+  background-size: 1600% 1600%;
+  animation: rainbowFlow 10s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-.upload-row{display:flex;gap:10px;margin-bottom:10px}
-button{padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
-.save-btn{background:#0a3d62;color:#fff}
-.multi-btn{background:#16a085;color:#fff}
-.del-btn{background:#e74c3c;color:#fff}
-.close-btn{background:#777;color:#fff;width:100%}
+@keyframes rainbowFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
-#thumbs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.thumb-wrapper{border:1px solid #ccc;border-radius:8px;overflow:hidden}
-.thumb{width:100%;aspect-ratio:4/3;object-fit:cover}
-.btn-group{display:flex}
-.btn-group button{flex:1;font-size:12px}
+/* Slider */
+.slider {
+  width: 100vw;
+  height: calc(100vh - 120px);
+  position: relative;
+  overflow: hidden;
+}
+
+.slides {
+  display: flex;
+  height: 100%;
+  transition: transform 0.8s ease-in-out;
+}
+
+.slides img {
+  width: 100vw;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  flex-shrink: 0;
+}
+
+/* Fullscreen button */
+.full-btn {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 999;
+  background: #27ae60;
+  border: none;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Admin Panel */
+#admin {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #f4f7f6;
+  color: #333;
+  z-index: 1000;
+  padding: 15px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.admin-card {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.upload-box {
+  background: #eef2f3;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 2px dashed #0a3d62;
+}
+
+.upload-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.upload-row input { flex: 1; }
+
+.limit-text {
+  font-size: 13px;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* Storage bar */
+.storage-box {
+  margin-top: 10px;
+}
+
+.storage-bar {
+  width: 100%;
+  height: 18px;
+  background: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.storage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #27ae60, #f1c40f, #e74c3c);
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+.storage-text {
+  font-size: 13px;
+  margin-top: 4px;
+  text-align: center;
+  color: #333;
+}
+
+/* Password change */
+.pass-box {
+  background: #f7f9fa;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 15px;
+  border: 1px solid #ccc;
+}
+
+.pass-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.pass-btn {
+  background: #8e44ad;
+  color: white;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.save-btn { background: #0a3d62; color: white; }
+.multi-btn { background: #16a085; color: white; }
+.close-btn { background: #95a5a6; color: white; }
+
+#thumbs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.thumb-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ddd;
+  border: 1px solid #ccc;
+}
+
+.thumb-wrapper.dragging { opacity: 0.5; }
+
+img.thumb {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+}
+
+.btn-group {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.btn-group button {
+  margin: 0;
+  border-radius: 0;
+  font-size: 11px;
+  padding: 6px 2px;
+  flex: 1;
+}
+
+.del-btn { background: #e74c3c; color: white; }
+.move-btn { background: #f1c40f; color: black; }
+.save-img-btn { background: #2980b9; color: white; }
 </style>
 </head>
 
 <body oncontextmenu="return false">
 
 <header id="title">
-<span class="rainbow-text">ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery</span>
+  <span class="rainbow-text">ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery</span>
 </header>
 
 <div class="slider">
   <div class="slides" id="slides"></div>
 </div>
 
-<button class="full-btn" onclick="toggleFullscreen()">⛶ Full Screen</button>
+<button class="full-btn" id="fullBtn" onclick="toggleFullscreen()">⛶ Full Screen</button>
 
 <div id="admin">
-<div class="admin-card">
-<h3>Admin Panel</h3>
+  <div class="admin-card">
+    <h3>Admin Panel</h3>
 
-<div class="upload-row">
-<input type="file" id="singleFile" accept="image/*">
-<button class="save-btn" onclick="uploadSingle()">Upload</button>
-</div>
+    <div class="upload-box">
+      <div class="upload-row">
+        <input type="file" id="singleFile" accept="image/*">
+        <button class="save-btn" onclick="uploadSingle()">Upload Single</button>
+      </div>
+      <div class="upload-row">
+        <input type="file" id="multiFile" accept="image/*" multiple>
+        <button class="multi-btn" onclick="uploadMultiple()">Upload Multiple</button>
+      </div>
+      <div class="limit-text">📏 Max image size: <b>5 MB</b> per image</div>
 
-<div class="upload-row">
-<input type="file" id="multiFile" accept="image/*" multiple>
-<button class="multi-btn" onclick="uploadMultiple()">Multi Upload</button>
-</div>
+      <div class="storage-box">
+        <div class="storage-bar">
+          <div class="storage-fill" id="storageFill"></div>
+        </div>
+        <div class="storage-text" id="storageText">Storage: 0 MB / 50 MB</div>
+      </div>
+    </div>
 
-<div id="info"></div>
-<div id="thumbs"></div>
+    <div class="pass-box">
+      <h4>🔐 Change Admin Password</h4>
+      <input type="password" id="oldPass" placeholder="Current Password">
+      <input type="password" id="newPass" placeholder="New Password">
+      <input type="password" id="confirmPass" placeholder="Confirm New Password">
+      <button class="pass-btn" onclick="changePassword()">Change Password</button>
+    </div>
 
-<button class="close-btn" onclick="admin.style.display='none'">Close</button>
-</div>
+    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:10px;">
+      <span>Manage Photos (Drag or Use Arrows)</span>
+      <span id="imgCount">0 Photos</span>
+    </div>
+
+    <div id="thumbs"></div>
+    <button class="close-btn" onclick="closeAdmin()">Close Panel</button>
+  </div>
 </div>
 
 <!-- Firebase -->
@@ -82,121 +302,260 @@ button{padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointe
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-const STORAGE_LIMIT_MB = 100;
-
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBb4fvEag4UaBiiIClR2KJLo6XFyyQlAHU",
-  databaseURL: "https://my-school-7ed03-default-rtdb.asia-southeast1.firebasedatabase.app"
+  authDomain: "my-school-7ed03.firebaseapp.com",
+  databaseURL: "https://my-school-7ed03-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "my-school-7ed03",
+  storageBucket: "my-school-7ed03.firebasestorage.app",
+  messagingSenderId: "958140511497",
+  appId: "1:958140511497:web:30e77b5310556025170fd8"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const ref = db.ref("gallery");
+const imgRef = db.ref("gallery");
+const passRef = db.ref("adminPassword");
 
 const slides = document.getElementById("slides");
 const thumbs = document.getElementById("thumbs");
+const fullBtn = document.getElementById("fullBtn");
 let images = [];
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const TOTAL_LIMIT = 50 * 1024 * 1024; // 50MB total storage
 
-ref.on("value", s=>{
-  images = s.val() || [];
-  render();
+let adminPassword = "1234"; // default if not set
+
+// Load password from Firebase
+passRef.on("value", snap => {
+  if (snap.exists()) adminPassword = snap.val();
+  else passRef.set(adminPassword);
 });
 
-function render(){
-  slides.innerHTML = images.map(i=>`<img src="${i}">`).join("");
-  thumbs.innerHTML = images.map((i,x)=>`
-  <div class="thumb-wrapper">
-    <img class="thumb" src="${i}">
-    <div class="btn-group">
-      <button onclick="moveUp(${x})">⬆</button>
-      <button onclick="moveDown(${x})">⬇</button>
-      <button onclick="saveImg(${x})">💾</button>
-      <button class="del-btn" onclick="deleteImg(${x})">❌</button>
+// Auto-sync images
+imgRef.on("value", snap => {
+  images = snap.val() || [];
+  load();
+  updateStorageBar();
+});
+
+function load() {
+  slides.innerHTML = images.length === 0
+    ? "<div style='width:100vw; height:100%; display:flex; align-items:center; justify-content:center;'>Empty</div>"
+    : images.map(src => `<img src="${src}">`).join('');
+
+  thumbs.innerHTML = images.map((src, idx) => `
+    <div class="thumb-wrapper" draggable="true" data-index="${idx}">
+      <img class="thumb" src="${src}">
+      <div class="btn-group">
+        <button class="move-btn" onclick="moveImg(${idx}, 'up')">↑</button>
+        <button class="move-btn" onclick="moveImg(${idx}, 'down')">↓</button>
+        <button class="move-btn" onclick="moveImg(${idx}, 'left')">←</button>
+        <button class="move-btn" onclick="moveImg(${idx}, 'right')">→</button>
+        <button class="save-img-btn" onclick="downloadSingle(${idx})">SAVE</button>
+        <button class="del-btn" onclick="deleteImg(${idx})">DEL</button>
+      </div>
     </div>
-  </div>`).join("");
+  `).join('');
 
-  calcStorage();
+  document.getElementById("imgCount").innerText = `${images.length} Photos`;
+  enableDrag();
+  startAutoSlide();
 }
 
-function calcStorage(){
-  let bytes=0;
-  images.forEach(i=>bytes+=i.length*0.75);
-  let used=(bytes/1024/1024).toFixed(2);
-  let left=(STORAGE_LIMIT_MB-used).toFixed(2);
-  info.innerHTML=`<b>Photos:</b> ${images.length}<br>
-<b>Used:</b> ${used} MB<br>
-<b>Left:</b> ${left>0?left:0} MB`;
-}
+/* Upload single image */
+function uploadSingle() {
+  const file = document.getElementById("singleFile").files[0];
+  if (!file) return alert("Select an image first");
+  if (file.size > MAX_SIZE) return alert("Image too large! Max 5MB allowed.");
+  if (getUsedSpace() + file.size > TOTAL_LIMIT) return alert("Storage limit exceeded!");
 
-function uploadSingle(){
-  const f=singleFile.files[0];
-  if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    images.push(e.target.result);
-    ref.set(images);
-  };
-  r.readAsDataURL(f);
-}
-
-function uploadMultiple(){
-  [...multiFile.files].forEach(f=>{
-    const r=new FileReader();
-    r.onload=e=>{
-      images.push(e.target.result);
-      ref.set(images);
-    };
-    r.readAsDataURL(f);
+  processImage(file, () => {
+    imgRef.set(images);
+    document.getElementById("singleFile").value = "";
   });
 }
 
-function deleteImg(i){
-  if(confirm("Delete image?")){
-    images.splice(i,1);
-    ref.set(images);
+/* Upload multiple images */
+function uploadMultiple() {
+  const files = document.getElementById("multiFile").files;
+  if (!files.length) return alert("Select images first");
+
+  let validFiles = [...files].filter(f => f.size <= MAX_SIZE);
+  if (validFiles.length !== files.length) alert("Some images were skipped (over 5MB).");
+
+  let index = 0;
+  function next() {
+    if (index >= validFiles.length) {
+      imgRef.set(images);
+      document.getElementById("multiFile").value = "";
+      return;
+    }
+    if (getUsedSpace() + validFiles[index].size > TOTAL_LIMIT) {
+      alert("Storage limit reached. Some images not uploaded.");
+      imgRef.set(images);
+      return;
+    }
+    processImage(validFiles[index++], next);
+  }
+  next();
+}
+
+/* Image processing */
+function processImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const max_w = 1600;
+      const scale = Math.min(1, max_w / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      images.push(canvas.toDataURL("image/jpeg", 0.9));
+      callback();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteImg(idx) {
+  if(confirm("Delete photo?")) {
+    images.splice(idx, 1);
+    imgRef.set(images);
   }
 }
 
-function saveImg(i){
-  const a=document.createElement("a");
-  a.href=images[i];
-  a.download=`school_image_${i+1}.jpg`;
-  a.click();
+/* Save image */
+function downloadSingle(idx) {
+  const link = document.createElement("a");
+  link.href = images[idx];
+  link.download = `school_photo_${idx + 1}.jpg`;
+  link.click();
 }
 
-function moveUp(i){
-  if(i==0)return;
-  [images[i],images[i-1]]=[images[i-1],images[i]];
-  ref.set(images);
-}
-function moveDown(i){
-  if(i==images.length-1)return;
-  [images[i],images[i+1]]=[images[i+1],images[i]];
-  ref.set(images);
+/* Move images */
+function moveImg(index, direction) {
+  let target = index;
+  if (direction === "up" || direction === "left") target = index - 1;
+  if (direction === "down" || direction === "right") target = index + 1;
+
+  if (target < 0 || target >= images.length) return;
+
+  const temp = images[index];
+  images[index] = images[target];
+  images[target] = temp;
+  imgRef.set(images);
 }
 
-let idx=0;
-setInterval(()=>{
-  if(images.length<2)return;
-  idx=(idx+1)%images.length;
-  slides.style.transform=`translateX(-${idx*100}vw)`;
-},4000);
+/* Auto slideshow */
+let i = 0, intv;
+function startAutoSlide() {
+  clearInterval(intv);
+  if (images.length < 2) return;
+  intv = setInterval(() => {
+    i = (i + 1) % images.length;
+    slides.style.transform = `translateX(-${i * 100}vw)`;
+  }, 4000);
+}
 
-let c=0,t;
-title.onclick=()=>{
-  c++;clearTimeout(t);
-  if(c==5){
-    if(prompt("Admin Password")==="1234")admin.style.display="block";
-    c=0;
+/* Admin lock */
+let clickCount = 0, timer;
+document.getElementById("title").onclick = () => {
+  clickCount++;
+  clearTimeout(timer);
+  if (clickCount === 5) {
+    const pwd = prompt("Enter admin password:");
+    if (pwd === adminPassword) {
+      document.getElementById("admin").style.display = "block";
+    } else {
+      alert("Wrong password!");
+    }
+    clickCount = 0;
   }
-  t=setTimeout(()=>c=0,1500);
+  timer = setTimeout(() => clickCount = 0, 1500);
 };
 
-function toggleFullscreen(){
-  document.fullscreenElement?
-  document.exitFullscreen():
-  document.documentElement.requestFullscreen();
+function closeAdmin() {
+  document.getElementById("admin").style.display = "none";
+}
+
+/* Fullscreen toggle */
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+    fullBtn.style.display = "none";
+  } else {
+    document.exitFullscreen();
+    fullBtn.style.display = "block";
+  }
+}
+
+/* Drag & Drop Rearranging */
+let dragSrcIndex = null;
+function enableDrag() {
+  const items = document.querySelectorAll(".thumb-wrapper");
+  items.forEach(item => {
+    item.addEventListener("dragstart", e => {
+      dragSrcIndex = Number(item.dataset.index);
+      item.classList.add("dragging");
+    });
+
+    item.addEventListener("dragend", e => {
+      item.classList.remove("dragging");
+    });
+
+    item.addEventListener("dragover", e => e.preventDefault());
+
+    item.addEventListener("drop", e => {
+      e.preventDefault();
+      const targetIndex = Number(item.dataset.index);
+      if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+      const moved = images.splice(dragSrcIndex, 1)[0];
+      images.splice(targetIndex, 0, moved);
+      imgRef.set(images);
+      dragSrcIndex = null;
+    });
+  });
+}
+
+/* Storage calculation */
+function getUsedSpace() {
+  let total = 0;
+  images.forEach(src => {
+    const base64 = src.split(',')[1];
+    total += Math.ceil((base64.length * 3) / 4);
+  });
+  return total;
+}
+
+function updateStorageBar() {
+  const used = getUsedSpace();
+  const percent = Math.min((used / TOTAL_LIMIT) * 100, 100);
+  document.getElementById("storageFill").style.width = percent + "%";
+  document.getElementById("storageText").innerText =
+    `Storage: ${(used / (1024*1024)).toFixed(1)} MB / ${(TOTAL_LIMIT / (1024*1024))} MB`;
+}
+
+/* Change password */
+function changePassword() {
+  const oldP = document.getElementById("oldPass").value;
+  const newP = document.getElementById("newPass").value;
+  const confirmP = document.getElementById("confirmPass").value;
+
+  if (oldP !== adminPassword) return alert("Current password incorrect!");
+  if (!newP || newP.length < 4) return alert("New password must be at least 4 characters!");
+  if (newP !== confirmP) return alert("Passwords do not match!");
+
+  passRef.set(newP);
+  alert("Password changed successfully!");
+  document.getElementById("oldPass").value = "";
+  document.getElementById("newPass").value = "";
+  document.getElementById("confirmPass").value = "";
 }
 </script>
 </body>
 </html>
-
