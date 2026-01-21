@@ -12,6 +12,12 @@ body {
   background: #000;
   color: white;
   overflow: hidden;
+  user-select: none;
+}
+
+/* Disable image drag */
+img {
+  pointer-events: none;
 }
 
 /* Header */
@@ -19,7 +25,7 @@ header {
   padding: 20px 10px;
   text-align: center;
   font-weight: bold;
-  font-size: 30px;
+  font-size: 36px;
   cursor: pointer;
   border-bottom: 2px solid #3498db;
   background: #0a3d62;
@@ -30,12 +36,12 @@ header {
 .rainbow-text {
   display: inline-block;
   max-width: 100%;
-  font-size: 30px;
+  font-size: 36px;
   background: linear-gradient(270deg,
     #ff0000, #ff7300, #ffeb00, #47ff00,
     #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 1600% 1600%;
-  animation: rainbowFlow 10s ease infinite;
+  animation: rainbowFlow 10s linear infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -50,7 +56,7 @@ header {
 /* Slider */
 .slider {
   width: 100vw;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 90px);
   position: relative;
   overflow: hidden;
 }
@@ -58,7 +64,7 @@ header {
 .slides {
   display: flex;
   height: 100%;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.8s ease-in-out;
 }
 
 .slides img {
@@ -117,6 +123,16 @@ header {
   border: 2px dashed #0a3d62;
 }
 
+.upload-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.upload-row input {
+  flex: 1;
+}
+
 button {
   width: 100%;
   padding: 14px;
@@ -129,6 +145,8 @@ button {
 }
 
 .save-btn { background: #0a3d62; color: white; }
+.multi-btn { background: #16a085; color: white; }
+.zip-btn { background: #8e44ad; color: white; }
 .close-btn { background: #95a5a6; color: white; }
 
 #thumbs {
@@ -174,11 +192,10 @@ img.thumb {
 }
 
 .del-btn { background: #e74c3c; color: white; }
-.dl-btn { background: #2980b9; color: white; }
 </style>
 </head>
 
-<body>
+<body oncontextmenu="return false">
 
 <header id="title">
   <span class="rainbow-text">ಸರಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ದಾಸರವಾಡಿ Gallery</span>
@@ -193,9 +210,20 @@ img.thumb {
 <div id="admin">
   <div class="admin-card">
     <h3>Admin Panel</h3>
+
     <div class="upload-box">
-      <input type="file" id="file" accept="image/*">
-      <button class="save-btn" onclick="upload()">Upload Photo</button>
+      <div class="upload-row">
+        <input type="file" id="singleFile" accept="image/*">
+        <button class="save-btn" onclick="uploadSingle()">Upload Single</button>
+      </div>
+      <div class="upload-row">
+        <input type="file" id="multiFile" accept="image/*" multiple>
+        <button class="multi-btn" onclick="uploadMultiple()">Upload Multiple</button>
+      </div>
+      <div class="upload-row">
+        <input type="file" id="zipFile" accept=".zip">
+        <button class="zip-btn" onclick="uploadZip()">Upload ZIP</button>
+      </div>
     </div>
 
     <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:10px;">
@@ -211,6 +239,9 @@ img.thumb {
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- JSZip -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <script>
 // Firebase config
@@ -248,7 +279,7 @@ function load() {
     <div class="thumb-wrapper" draggable="true" data-index="${idx}">
       <img class="thumb" src="${src}">
       <div class="btn-group">
-        <button class="dl-btn" onclick="downloadSingle(${idx})">SAVE</button>
+        <button class="save-btn" onclick="downloadSingle(${idx})">SAVE</button>
         <button class="del-btn" onclick="deleteImg(${idx})">DEL</button>
       </div>
     </div>
@@ -259,27 +290,78 @@ function load() {
   startAutoSlide();
 }
 
-// High-quality upload
-function upload() {
-  let f = document.getElementById("file").files[0];
-  if (!f) return alert("Select image first");
-  let reader = new FileReader();
+/* Upload single image */
+function uploadSingle() {
+  const file = document.getElementById("singleFile").files[0];
+  if (!file) return alert("Select an image first");
+
+  processImage(file, () => {
+    imgRef.set(images);
+    document.getElementById("singleFile").value = "";
+  });
+}
+
+/* Upload multiple images */
+function uploadMultiple() {
+  const files = document.getElementById("multiFile").files;
+  if (!files.length) return alert("Select images first");
+
+  let index = 0;
+  function next() {
+    if (index >= files.length) {
+      imgRef.set(images);
+      document.getElementById("multiFile").value = "";
+      return;
+    }
+    processImage(files[index++], next);
+  }
+  next();
+}
+
+/* Upload ZIP file */
+async function uploadZip() {
+  const zipInput = document.getElementById("zipFile");
+  const file = zipInput.files[0];
+  if (!file) return alert("Select a ZIP file first");
+
+  const zip = await JSZip.loadAsync(file);
+  const entries = Object.values(zip.files).filter(f =>
+    !f.dir && /\.(jpg|jpeg|png|webp)$/i.test(f.name)
+  );
+
+  if (!entries.length) return alert("No images found in ZIP file.");
+
+  let index = 0;
+  async function next() {
+    if (index >= entries.length) {
+      imgRef.set(images);
+      zipInput.value = "";
+      return;
+    }
+    const blob = await entries[index++].async("blob");
+    processImage(blob, next);
+  }
+  next();
+}
+
+/* Image processing (high quality) */
+function processImage(file, callback) {
+  const reader = new FileReader();
   reader.onload = e => {
-    let img = new Image();
+    const img = new Image();
     img.onload = () => {
-      let canvas = document.createElement("canvas");
-      let max_w = 1600; // higher resolution
-      let scale = Math.min(1, max_w / img.width);
+      const canvas = document.createElement("canvas");
+      const max_w = 1600;
+      const scale = Math.min(1, max_w / img.width);
       canvas.width = img.width * scale;
       canvas.height = img.height * scale;
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      images.push(canvas.toDataURL("image/jpeg", 0.95)); // high quality
-      imgRef.set(images);
-      document.getElementById("file").value = "";
+      images.push(canvas.toDataURL("image/jpeg", 0.95));
+      callback();
     };
     img.src = e.target.result;
   };
-  reader.readAsDataURL(f);
+  reader.readAsDataURL(file);
 }
 
 function deleteImg(idx) {
@@ -339,7 +421,7 @@ function toggleFullscreen() {
   }
 }
 
-/* Drag & Drop */
+/* Drag & Drop Rearranging */
 let dragSrcIndex = null;
 function enableDrag() {
   const items = document.querySelectorAll(".thumb-wrapper");
